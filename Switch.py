@@ -74,6 +74,12 @@ class Switch(StpSwitch):
         """
         super(Switch, self).__init__(idNum, topolink, neighbors)
         # TODO: Define class members to keep track of which links are part of the spanning tree
+        self.root = idNum
+        self.distance = 0
+        self.switchThrough = idNum
+        self.active_links = list()
+        self.topology = topolink
+        self.neighbors = neighbors
 
     def process_message(self, message: Message):
         """
@@ -82,9 +88,52 @@ class Switch(StpSwitch):
 
         message: Message
             the Message received from other Switches
+
+        Message format is msg = Message(claimedRoot, distanceToRoot, originID, destinationID, pathThrough, timeToLive)
         """
-        # TODO: This function needs to accept an incoming message and process it accordingly.
-        #      This function is called every time the switch receives a new message.
+        updated = False
+        message.ttl -= 1
+        if message.ttl <= 0:
+            return
+        
+        # Update self.root if claimedRoot is less than self.root
+        if message.root < self.root:
+            self.root = message.root
+            self.distance = message.distance + 1
+            self.active_links.append(message.origin)
+            self.switchThrough = message.origin
+            updated = True
+        
+        elif message.root == self.root:
+            # There is a shorter path to the same root.
+            if message.distance + 1 < self.distance:
+                self.distance = message.distance + 1
+                #self.active_links.append(message.origin)
+                self.switchThrough = message.origin
+                updated = True
+            
+            # If both the root and distance are the same, choose the lower switch ID
+            elif message.distance + 1 == self.distance:
+                if message.origin < self.switchThrough:
+                    self.switchThrough = message.origin
+                    updated = True
+        
+
+        # Switch should update activeLinks if
+            # Switch finds new path to root (or through different neighbors). Switch should add new link and remove old link
+
+
+            # pathThrough is True but originID not in activeLinks list. Switch should add originID to activeLinks list
+            if message.pathThrough and message.origin not in self.active_links:
+                self.active_links.append(message.origin)
+
+            # pathThrough is False but originID is in activeLinks list. Switch should remove originID from activeLinks list
+            if not message.pathThrough and message.origin in self.active_links:
+                self.active_links.remove(message.origin)
+                updated = True
+            
+        
+
 
     def generate_logstring(self):
         """
