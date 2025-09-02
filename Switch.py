@@ -78,7 +78,7 @@ class Switch(StpSwitch):
         self.switchThrough = idNum
         self.active_links = []
         self.neighbors = neighbors
-   
+
 
 
     def process_message(self, message: Message):
@@ -94,7 +94,7 @@ class Switch(StpSwitch):
         while message.ttl > 0:
             updated = False
             message.ttl -= 1
-            
+
             # Update self.root if claimedRoot is less than self.root
             if message.root < self.root:
                 self.root = message.root
@@ -102,7 +102,7 @@ class Switch(StpSwitch):
                 self.switchThrough = message.origin
                 self.active_links.append(message.origin)
                 updated = True
-            
+
             elif message.root == self.root:
                 # There is a shorter path to the same root.
                 if message.distance + 1 < self.distance:
@@ -110,14 +110,14 @@ class Switch(StpSwitch):
                     self.switchThrough = message.origin
                     self.active_links.append(message.origin)
                     updated = True
-                
+
                 # If both the root and distance are the same, choose the lower switch ID
                 elif message.distance + 1 == self.distance:
                     if message.origin < self.switchThrough:
                         self.switchThrough = message.origin
                         self.active_links.append(message.origin)
                         updated = True
-            
+
             if updated:
                 self.pathThrough()
 
@@ -125,10 +125,10 @@ class Switch(StpSwitch):
             if message.pathThrough and message.origin not in self.active_links:
                 self.active_links.append(message.origin)
 
-            # pathThrough is False but originID is in activeLinks list. Switch should remove originID from activeLinks list
-            if not message.pathThrough and message.origin in self.active_links:
-                self.active_links.remove(message.origin)
-                updated = True
+            #pathThrough is False but originID is in activeLinks list. Switch should remove originID from activeLinks list
+            # if not message.pathThrough and message.origin in self.active_links:
+            #     self.active_links.remove(message.origin)
+            #     updated = True
 
     def pathThrough(self):
         for neighbor in self.neighbors:
@@ -137,7 +137,7 @@ class Switch(StpSwitch):
                 pathThrough = True
             msg = Message(self.root, self.distance, self.switchID, neighbor, pathThrough)
             self.send_message(msg)
-        
+
 
     def generate_logstring(self):
         """
@@ -161,7 +161,7 @@ class Switch(StpSwitch):
         #      A full example of a valid output file is included (Logs/) in the project skeleton.
         edges = []
         for neighbor in self.active_links:
-            a, b = sorted([self.switchID, neighbor])
+            a, b = ([self.switchID, neighbor])
             edges.append((a, b))
         edges = sorted(set(edges))
         logstring = ', '.join(f"{a} - {b}" for a, b in edges)
