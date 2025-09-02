@@ -159,5 +159,10 @@ class Switch(StpSwitch):
         #      2 - 1, 2 - 3
         #
         #      A full example of a valid output file is included (Logs/) in the project skeleton.
-        
-        return "# - #, # - #, # - #"
+        edges = []
+        for neighbor in self.active_links:
+            a, b = sorted([self.switchID, neighbor])
+            edges.append((a, b))
+        edges = sorted(set(edges))
+        logstring = ', '.join(f"{a} - {b}" for a, b in edges)
+        return logstring
