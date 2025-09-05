@@ -98,37 +98,27 @@ class Switch(StpSwitch):
             # Update self.root if claimedRoot is less than self.root
             if message.root < self.root:
                 self.root = message.root
-                self.distance = message.distance + 1
-                self.switchThrough = message.origin
-                self.active_links.append(message.origin)
+                self.update_parent(message.origin, message.distance + 1)
                 updated = True
 
             elif message.root == self.root:
                 # There is a shorter path to the same root.
                 if message.distance + 1 < self.distance:
-                    self.distance = message.distance + 1
-                    self.switchThrough = message.origin
-                    self.active_links.append(message.origin)
+                    self.update_parent(message.origin, message.distance + 1)
                     updated = True
 
                 # If both the root and distance are the same, choose the lower switch ID
-                elif message.distance + 1 == self.distance:
-                    if message.origin < self.switchThrough:
-                        self.switchThrough = message.origin
-                        self.active_links.append(message.origin)
+                elif message.distance + 1 == self.distance and message.origin <  self.switchThrough:
+                        self.update_parent(message.origin, message.distance + 1)
                         updated = True
+
+                if message.pathThrough and message.origin not in self.active_links:
+                    self.active_links.append(message.origin)
+                elif not message.pathThrough and message.origin in self.active_links and message.origin != self.switchThrough:
+                    self.active_links.remove(message.origin)
 
             if updated:
                 self.pathThrough()
-
-            # pathThrough is True but originID not in activeLinks list. Switch should add originID to activeLinks list
-            if message.pathThrough and message.origin not in self.active_links:
-                self.active_links.append(message.origin)
-
-            #pathThrough is False but originID is in activeLinks list. Switch should remove originID from activeLinks list
-            # if not message.pathThrough and message.origin in self.active_links:
-            #     self.active_links.remove(message.origin)
-            #     updated = True
 
     def pathThrough(self):
         for neighbor in self.neighbors:
@@ -137,7 +127,14 @@ class Switch(StpSwitch):
                 pathThrough = True
             msg = Message(self.root, self.distance, self.switchID, neighbor, pathThrough)
             self.send_message(msg)
-
+    
+    def update_parent(self, new_parent, new_distance):
+        if self.switchThrough in self.active_links and self.switchThrough != self.switchID:
+            self.active_links.remove(self.switchThrough)
+        self.switchThrough = new_parent
+        self.distance = new_distance
+        if new_parent not in self.active_links:
+            self.active_links.append(new_parent)
 
     def generate_logstring(self):
         """
